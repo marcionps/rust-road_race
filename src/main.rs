@@ -1,9 +1,11 @@
-use rusty_engine::prelude::*;
+use rusty_engine::prelude::{bevy::utils::tracing::metadata::ParseLevelError, *};
 
 struct GameState {
     health_amount: u8,
     lost: bool,
 }
+
+const PLAYER_SPEED: f32 = 250.0;
 
 fn main() {
     let mut game = Game::new();
@@ -25,4 +27,22 @@ fn main() {
     });
 }
 
-fn game_logic(engine: &mut Engine, game_state: &mut GameState) {}
+fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
+    // keyboard input
+    let mut direction: f32 = 0.0;
+    if engine.keyboard_state.pressed(KeyCode::Up) {
+        direction += 1.0;
+    }
+
+    if engine.keyboard_state.pressed(KeyCode::Down) {
+        direction -= 1.0;
+    }
+
+    let mut player = engine.sprites.get_mut("player1").unwrap();
+    player.translation.y = direction * PLAYER_SPEED * engine.delta_f32;
+    player.rotation = direction * 0.15;
+
+    if player.translation.y < -360.0 || player.translation.y > 360.0 {
+        game_state.health_amount = 0;
+    }
+}
