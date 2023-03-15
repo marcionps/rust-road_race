@@ -40,6 +40,10 @@ fn main() {
         obstacle.translation.y = thread_rng().gen_range(-300.0..300.0);
     }
 
+    // health text
+    let health_message = game.add_text("health_message", "Health: 5");
+    health_message.translation = Vec2::new(550.0, 320.0);
+
     // background music
     game.audio_manager
         .play_music(MusicPreset::WhimsicalPopsicle, 0.2);
@@ -52,6 +56,10 @@ fn main() {
 }
 
 fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
+    if game_state.lost {
+        return;
+    }
+
     // keyboard input
     let mut direction: f32 = 0.0;
     if engine.keyboard_state.pressed(KeyCode::Up) {
@@ -86,5 +94,28 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
                 sprite.translation.y = thread_rng().gen_range(-300.0..300.0);
             }
         }
+    }
+
+    let health_message = engine.texts.get_mut("health_message").unwrap();
+
+    for event in engine.collision_events.drain(..) {
+        if !event.pair.either_contains("player1") || event.state.is_end() {
+            continue;
+        }
+
+        if game_state.health_amount > 0 {
+            game_state.health_amount -= 1;
+            health_message.value = format!("Health {}", game_state.health_amount);
+            engine.audio_manager.play_sfx(SfxPreset::Impact3, 0.5);
+        }
+    }
+
+    if game_state.health_amount == 0 {
+        game_state.lost = true;
+
+        let game_over = engine.add_text("game_over", "Game Over");
+        game_over.font_size = 128.0;
+        engine.audio_manager.stop_music();
+        engine.audio_manager.play_sfx(SfxPreset::Jingle3, 0.5);
     }
 }
