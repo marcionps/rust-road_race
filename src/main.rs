@@ -23,6 +23,14 @@ fn main() {
     player.layer = 10.0;
     player.collision = true;
 
+    // road lines
+    for i in 0..10 {
+        let mut roadline =
+            game.add_sprite(format!("roadline{}", i), SpritePreset::RacingBarrierWhite);
+        roadline.scale = 0.1;
+        roadline.translation.x = -600.0 + 150.0 * i as f32;
+    }
+
     // obstacles
     for (i, preset) in obstacle_presets.into_iter().enumerate() {
         let obstacle = game.add_sprite(format!("obstacle{}", i), preset);
@@ -35,13 +43,6 @@ fn main() {
     // background music
     game.audio_manager
         .play_music(MusicPreset::WhimsicalPopsicle, 0.2);
-
-    for i in 0..10 {
-        let mut roadline =
-            game.add_sprite(format!("roadline{}", i), SpritePreset::RacingBarrierWhite);
-        roadline.scale = 0.1;
-        roadline.translation.x = -600.0 + 150.0 * i as f32;
-    }
 
     game.add_logic(game_logic);
     game.run(GameState {
@@ -61,11 +62,11 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
         direction -= 1.0;
     }
 
-    let mut player = engine.sprites.get_mut("player1").unwrap();
-    player.translation.y = direction * PLAYER_SPEED * engine.delta_f32;
-    player.rotation = direction * 0.15;
+    let mut player1 = engine.sprites.get_mut("player1").unwrap();
+    player1.translation.y += direction * PLAYER_SPEED * engine.delta_f32;
+    player1.rotation = direction * 0.15;
 
-    if player.translation.y < -360.0 || player.translation.y > 360.0 {
+    if player1.translation.y < -360.0 || player1.translation.y > 360.0 {
         game_state.health_amount = 0;
     }
 
