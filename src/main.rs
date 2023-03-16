@@ -141,8 +141,6 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
             continue;
         }
 
-        println!("{:?}", event);
-
         if game_state.health_amount0 > 0 && event.pair.either_contains("player0") {
             game_state.health_amount0 -= 1;
 
