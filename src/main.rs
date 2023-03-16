@@ -2,7 +2,8 @@ use rand::prelude::*;
 use rusty_engine::prelude::*;
 
 struct GameState {
-    health_amount: u8,
+    health_amount1: u8,
+    health_amount2: u8,
     lost: bool,
 }
 
@@ -48,8 +49,11 @@ fn main() {
     }
 
     // health text
-    let health_message = game.add_text("health_message", "Health: 5");
-    health_message.translation = Vec2::new(550.0, 320.0);
+    let health_message1 = game.add_text("health_message1", "Health P1: 5");
+    health_message1.translation = Vec2::new(550.0, 320.0);
+
+    let health_message2 = game.add_text("health_message2", "Health P2: 5");
+    health_message2.translation = Vec2::new(550.0, 280.0);
 
     // background music
     game.audio_manager
@@ -57,7 +61,8 @@ fn main() {
 
     game.add_logic(game_logic);
     game.run(GameState {
-        health_amount: 5,
+        health_amount1: 5,
+        health_amount2: 5,
         lost: false,
     });
 }
@@ -91,7 +96,7 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
     player1.rotation = direction1 * 0.15;
 
     if player1.translation.y < -360.0 || player1.translation.y > 360.0 {
-        game_state.health_amount = 0;
+        game_state.health_amount1 = 0;
     }
 
     let mut player2 = engine.sprites.get_mut("player2").unwrap();
@@ -116,21 +121,21 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
         }
     }
 
-    let health_message = engine.texts.get_mut("health_message").unwrap();
+    let health_message1 = engine.texts.get_mut("health_message1").unwrap();
 
     for event in engine.collision_events.drain(..) {
         if !event.pair.either_contains("player1") || event.state.is_end() {
             continue;
         }
 
-        if game_state.health_amount > 0 {
-            game_state.health_amount -= 1;
-            health_message.value = format!("Health {}", game_state.health_amount);
+        if game_state.health_amount1 > 0 {
+            game_state.health_amount1 -= 1;
+            health_message1.value = format!("Health P1: {}", game_state.health_amount1);
             engine.audio_manager.play_sfx(SfxPreset::Impact3, 0.5);
         }
     }
 
-    if game_state.health_amount == 0 {
+    if game_state.health_amount1 == 0 {
         game_state.lost = true;
 
         let game_over = engine.add_text("game_over", "Game Over");
