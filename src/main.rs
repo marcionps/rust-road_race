@@ -9,6 +9,7 @@ struct GameState {
 
 const PLAYER_SPEED: f32 = 250.0;
 const ROAD_SPEED: f32 = 400.0;
+const INITIAL_HEALTH: u8 = 5;
 
 fn main() {
     let mut game = Game::new();
@@ -49,10 +50,12 @@ fn main() {
     }
 
     // health text
-    let health_message0 = game.add_text("health_message1", "Health P1: 5");
+    let health_message0 =
+        game.add_text("health_message1", format!("Health P1: {}", INITIAL_HEALTH));
     health_message0.translation = Vec2::new(550.0, 320.0);
 
-    let health_message1 = game.add_text("health_message2", "Health P2: 5");
+    let health_message1 =
+        game.add_text("health_message2", format!("Health P2: {}", INITIAL_HEALTH));
     health_message1.translation = Vec2::new(550.0, 280.0);
 
     // background music
@@ -61,8 +64,8 @@ fn main() {
 
     game.add_logic(game_logic);
     game.run(GameState {
-        health_amount0: 5,
-        health_amount1: 5,
+        health_amount0: INITIAL_HEALTH,
+        health_amount1: INITIAL_HEALTH,
         lost: false,
     });
 }
@@ -158,6 +161,18 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
 
         let game_over = engine.add_text("game_over", "Game Over");
         game_over.font_size = 128.0;
+        game_over.translation.y = 100.0;
+
+        let win = engine.add_text("win", "");
+
+        if game_state.health_amount0 == 0 {
+            win.value = "Player 2 WINS!".to_string();
+        } else {
+            win.value = "Player 1 WINS!".to_string();
+        }
+
+        win.font_size = 120.0;
+        win.translation.y = -100.0;
         engine.audio_manager.stop_music();
         engine.audio_manager.play_sfx(SfxPreset::Jingle3, 0.5);
     }
