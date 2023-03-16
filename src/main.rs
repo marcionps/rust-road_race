@@ -1,5 +1,5 @@
 use rand::prelude::*;
-use rusty_engine::prelude::{bevy::utils::tracing::metadata::ParseLevelError, *};
+use rusty_engine::prelude::*;
 
 struct GameState {
     health_amount: u8,
@@ -18,10 +18,17 @@ fn main() {
     ];
 
     // player sprite
-    let mut player = game.add_sprite("player1", SpritePreset::RacingCarBlue);
-    player.translation.x = -500.0;
-    player.layer = 10.0;
-    player.collision = true;
+    let mut player1 = game.add_sprite("player1", SpritePreset::RacingCarBlue);
+    player1.translation.x = -500.0;
+    player1.translation.y = -100.0;
+    player1.layer = 10.0;
+    player1.collision = true;
+
+    let mut player2 = game.add_sprite("player2", SpritePreset::RacingCarRed);
+    player2.translation.x = -500.0;
+    player2.translation.y = 100.0;
+    player2.layer = 10.0;
+    player2.collision = true;
 
     // road lines
     for i in 0..10 {
@@ -61,22 +68,35 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
     }
 
     // keyboard input
-    let mut direction: f32 = 0.0;
+    let mut direction1: f32 = 0.0;
     if engine.keyboard_state.pressed(KeyCode::Up) {
-        direction += 1.0;
+        direction1 += 1.0;
     }
 
     if engine.keyboard_state.pressed(KeyCode::Down) {
-        direction -= 1.0;
+        direction1 -= 1.0;
+    }
+
+    let mut direction2: f32 = 0.0;
+    if engine.keyboard_state.pressed(KeyCode::W) {
+        direction2 += 1.0;
+    }
+
+    if engine.keyboard_state.pressed(KeyCode::S) {
+        direction2 -= 1.0;
     }
 
     let mut player1 = engine.sprites.get_mut("player1").unwrap();
-    player1.translation.y += direction * PLAYER_SPEED * engine.delta_f32;
-    player1.rotation = direction * 0.15;
+    player1.translation.y += direction1 * PLAYER_SPEED * engine.delta_f32;
+    player1.rotation = direction1 * 0.15;
 
     if player1.translation.y < -360.0 || player1.translation.y > 360.0 {
         game_state.health_amount = 0;
     }
+
+    let mut player2 = engine.sprites.get_mut("player2").unwrap();
+    player2.translation.y += direction2 * PLAYER_SPEED * engine.delta_f32;
+    player2.rotation = direction2 * 0.15;
 
     for sprite in engine.sprites.values_mut() {
         if sprite.label.starts_with("roadline") {
