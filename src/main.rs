@@ -2,8 +2,8 @@ use rand::prelude::*;
 use rusty_engine::prelude::*;
 
 struct GameState {
+    health_amount0: u8,
     health_amount1: u8,
-    health_amount2: u8,
     lost: bool,
 }
 
@@ -19,17 +19,17 @@ fn main() {
     ];
 
     // player sprite
-    let mut player1 = game.add_sprite("player1", SpritePreset::RacingCarBlue);
+    let mut player0 = game.add_sprite("player0", SpritePreset::RacingCarBlue);
+    player0.translation.x = -500.0;
+    player0.translation.y = -100.0;
+    player0.layer = 10.0;
+    player0.collision = true;
+
+    let mut player1 = game.add_sprite("player1", SpritePreset::RacingCarRed);
     player1.translation.x = -500.0;
-    player1.translation.y = -100.0;
+    player1.translation.y = 100.0;
     player1.layer = 10.0;
     player1.collision = true;
-
-    let mut player2 = game.add_sprite("player2", SpritePreset::RacingCarRed);
-    player2.translation.x = -500.0;
-    player2.translation.y = 100.0;
-    player2.layer = 10.0;
-    player2.collision = true;
 
     // road lines
     for i in 0..10 {
@@ -49,11 +49,11 @@ fn main() {
     }
 
     // health text
-    let health_message1 = game.add_text("health_message1", "Health P1: 5");
-    health_message1.translation = Vec2::new(550.0, 320.0);
+    let health_message0 = game.add_text("health_message1", "Health P1: 5");
+    health_message0.translation = Vec2::new(550.0, 320.0);
 
-    let health_message2 = game.add_text("health_message2", "Health P2: 5");
-    health_message2.translation = Vec2::new(550.0, 280.0);
+    let health_message1 = game.add_text("health_message2", "Health P2: 5");
+    health_message1.translation = Vec2::new(550.0, 280.0);
 
     // background music
     game.audio_manager
@@ -61,8 +61,8 @@ fn main() {
 
     game.add_logic(game_logic);
     game.run(GameState {
+        health_amount0: 5,
         health_amount1: 5,
-        health_amount2: 5,
         lost: false,
     });
 }
@@ -73,35 +73,39 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
     }
 
     // keyboard input
-    let mut direction1: f32 = 0.0;
+    let mut direction0: f32 = 0.0;
     if engine.keyboard_state.pressed(KeyCode::Up) {
-        direction1 += 1.0;
+        direction0 += 1.0;
     }
 
     if engine.keyboard_state.pressed(KeyCode::Down) {
-        direction1 -= 1.0;
+        direction0 -= 1.0;
     }
 
-    let mut direction2: f32 = 0.0;
+    let mut direction1: f32 = 0.0;
     if engine.keyboard_state.pressed(KeyCode::W) {
-        direction2 += 1.0;
+        direction1 += 1.0;
     }
 
     if engine.keyboard_state.pressed(KeyCode::S) {
-        direction2 -= 1.0;
+        direction1 -= 1.0;
     }
 
-    let mut player1 = engine.sprites.get_mut("player1").unwrap();
-    player1.translation.y += direction1 * PLAYER_SPEED * engine.delta_f32;
-    player1.rotation = direction1 * 0.15;
+    let mut players = engine.sprites.get_many_mut(["player0", "player1"]).unwrap();
 
-    if player1.translation.y < -360.0 || player1.translation.y > 360.0 {
+    players[0].translation.y += direction0 * PLAYER_SPEED * engine.delta_f32;
+    players[0].rotation = direction0 * 0.15;
+
+    players[1].translation.y += direction1 * PLAYER_SPEED * engine.delta_f32;
+    players[1].rotation = direction1 * 0.15;
+
+    if players[0].translation.y < -360.0 || players[0].translation.y > 360.0 {
+        game_state.health_amount0 = 0;
+    }
+
+    if players[1].translation.y < -360.0 || players[1].translation.y > 360.0 {
         game_state.health_amount1 = 0;
     }
-
-    let mut player2 = engine.sprites.get_mut("player2").unwrap();
-    player2.translation.y += direction2 * PLAYER_SPEED * engine.delta_f32;
-    player2.rotation = direction2 * 0.15;
 
     for sprite in engine.sprites.values_mut() {
         if sprite.label.starts_with("roadline") {
@@ -121,21 +125,35 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
         }
     }
 
-    let health_message1 = engine.texts.get_mut("health_message1").unwrap();
+    let mut health_message = engine
+        .texts
+        .get_many_mut(["health_message1", "health_message2"])
+        .unwrap();
 
     for event in engine.collision_events.drain(..) {
-        if !event.pair.either_contains("player1") || event.state.is_end() {
+        if !(event.pair.either_contains("player0") || event.pair.either_contains("player1"))
+            || (event.pair.either_contains("player0") && event.pair.either_contains("player1"))
+            || event.state.is_end()
+        {
             continue;
         }
 
-        if game_state.health_amount1 > 0 {
-            game_state.health_amount1 -= 1;
-            health_message1.value = format!("Health P1: {}", game_state.health_amount1);
-            engine.audio_manager.play_sfx(SfxPreset::Impact3, 0.5);
+        println!("{:?}", event);
+
+        if game_state.health_amount0 > 0 && event.pair.either_contains("player0") {
+            game_state.health_amount0 -= 1;
+
+            health_message[0].value = format!("Health P1: {}", game_state.health_amount0);
         }
+
+        if game_state.health_amount1 > 0 && event.pair.either_contains("player1") {
+            game_state.health_amount1 -= 1;
+            health_message[1].value = format!("Health P2: {}", game_state.health_amount1);
+        }
+        engine.audio_manager.play_sfx(SfxPreset::Impact3, 0.5);
     }
 
-    if game_state.health_amount1 == 0 {
+    if game_state.health_amount0 == 0 || game_state.health_amount1 == 0 {
         game_state.lost = true;
 
         let game_over = engine.add_text("game_over", "Game Over");
